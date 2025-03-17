@@ -37,3 +37,4 @@ class Note(Base):
         Integer, ForeignKey("notes.id"), nullable=True
     )
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
+    summary: Mapped[str] = mapped_column(Text, nullable=True)
