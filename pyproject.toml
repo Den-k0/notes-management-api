@@ -14,9 +14,34 @@ dependencies = [
     "python-dotenv (>=1.0.1,<2.0.0)",
     "alembic (>=1.15.1,<2.0.0)",
     "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "ruff (>=0.11.0,<0.12.0)",
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+line-length = 79
+exclude = [
+    "alembic/versions/*",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # PEP8 naming convetions
+]
+
+ignore = ["I001", "E731"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
