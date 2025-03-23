@@ -7,6 +7,7 @@ from src import schemas
 from src.models import Note
 
 
+# crud
 def create_note(db: Session, note_data: schemas.NoteCreateRequestSchema):
     """
     Create a new note in the database.
@@ -168,15 +169,92 @@ def soft_delete_note(db: Session, note_id: int):
     """
     try:
         note = get_note_by_id(db=db, note_id=note_id, is_deleted=False)
-
         if not note:
             raise HTTPException(404, detail="Note not found")
 
         note.is_deleted = True
         db.commit()
         db.refresh(note)
-
         return note
+
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(500, detail=str(e))
+
+
+# versions
+def get_previous_note_version(db: Session, note: Note):
+    """
+    Retrieve the previous version of a note from the database.
+
+    Args:
+        db (Session): SQLAlchemy database session.
+        note (Note): The current note object.
+
+    Returns:
+        Note: The previous version of the note if found.
+
+    Raises:
+        HTTPException: If no previous version is found.
+    """
+    if not note.previous_version_id:
+        raise HTTPException(404, detail="No previous version found")
+    return db.execute(
+        select(Note).where(Note.id == note.previous_version_id)
+    ).scalars().first()
+    # return db.query(Note).filter(Note.id == note.previous_version_id).first()  # sqlalchemy v1
+
+
+def get_all_note_versions(db: Session, note: Note):
+    """
+    Retrieve all versions of a note from the database.
+
+    Args:
+        db (Session): SQLAlchemy database session.
+        note (Note): The current note object.
+
+    Returns:
+        list[Note]: A list of all versions of the note, starting from the current version.
+    """
+    history = []
+    current = note
+
+    while current:
+        history.append(current)
+        if not current.previous_version_id:
+            break
+        current = get_previous_note_version(db=db, note=current)
+
+    return history
+
+
+def restore_previous_note_version(db: Session, note_id: int):
+    """
+    Restore the previous version of a note by making
+    the current version inactive (is_current = False)
+    and the previous version active (is_current = True).
+
+    Args:
+        db (Session): SQLAlchemy database session.
+        note_id (int): ID of the note to restore to its previous version.
+
+    Returns:
+        Note: The restored previous version of the note.
+
+    Raises:
+        HTTPException: If the current or previous version of the note
+                       is not found, or if there is a database error.
+    """
+    try:
+        current_note = get_note_by_id(db=db, note_id=note_id, is_deleted=False)
+        previous_note = get_previous_note_version(db=db, note=current_note)
+
+        current_note.is_current = False
+        previous_note.is_current = True
+
+        db.commit()
+        return previous_note
+
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(500, detail=str(e))

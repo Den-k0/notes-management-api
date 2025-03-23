@@ -9,6 +9,9 @@ from src.crud import (
     create_new_note_version,
     restore_deleted_note,
     soft_delete_note,
+    get_all_note_versions,
+    get_previous_note_version,
+    restore_previous_note_version,
 )
 from src.database import get_postgresql_db
 
@@ -76,4 +79,29 @@ def delete_note(note_id: int, db: Session = Depends(get_postgresql_db)):
     note = soft_delete_note(db=db, note_id=note_id)
     return schemas.MessageResponseSchema(
         message=f"Note with ID {note.id} has been deleted"
+    )
+
+
+@app.get("/notes/history/all/{note_id}/", response_model=list[schemas.NoteResponseSchema])
+def get_note_history(note_id: int, db: Session = Depends(get_postgresql_db)):
+    return get_all_note_versions(
+        db=db,
+        note=get_note_by_id(db=db, note_id=note_id, is_deleted=False)
+    )
+
+
+@app.get("/notes/history/previous/{note_id}/", response_model=schemas.NoteDetailResponseSchema)
+def get_previous_version(note_id: int, db: Session = Depends(get_postgresql_db)):
+    return get_previous_note_version(
+        db=db,
+        note=get_note_by_id(db=db, note_id=note_id, is_deleted=False)
+    )
+
+
+@app.post("/notes/history/restore/{note_id}/", response_model=schemas.MessageResponseSchema)
+def restore_previous_version(note_id: int, db: Session = Depends(get_postgresql_db)):
+    restore_previous_note_version(db=db, note_id=note_id)
+
+    return schemas.MessageResponseSchema(
+        message=f"Previous version of note with ID {note_id} has been restored"
     )
