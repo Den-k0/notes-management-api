@@ -34,7 +34,8 @@ class Note(Base):
     )
     version: Mapped[int] = mapped_column(Integer, default=1)
     previous_version_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("notes.id"), nullable=True
+        Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=True
     )
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     summary: Mapped[str] = mapped_column(Text, nullable=True)
