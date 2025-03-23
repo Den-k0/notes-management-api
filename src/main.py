@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from src import schemas
@@ -18,8 +18,15 @@ from src.database import get_postgresql_db
 app = FastAPI()
 
 
-@app.post("/notes/", response_model=schemas.NoteDetailResponseSchema, status_code=201)
-def create_new_note(request: schemas.NoteCreateRequestSchema, db: Session = Depends(get_postgresql_db)):
+@app.post(
+    "/notes/",
+    response_model=schemas.NoteDetailResponseSchema,
+    status_code=status.HTTP_201_CREATED
+)
+def create_new_note(
+    request: schemas.NoteCreateRequestSchema,
+    db: Session = Depends(get_postgresql_db),
+):
     return create_note(db=db, note_data=request)
 
 
@@ -27,7 +34,7 @@ def create_new_note(request: schemas.NoteCreateRequestSchema, db: Session = Depe
 def get_all_active_notes(
     skip: int = Query(0),
     limit: int = Query(10),
-    db: Session = Depends(get_postgresql_db)
+    db: Session = Depends(get_postgresql_db),
 ):
     return get_notes_list(db=db, is_deleted=False, skip=skip, limit=limit)
 
@@ -36,37 +43,53 @@ def get_all_active_notes(
 def get_all_deleted_notes(
     skip: int = Query(0),
     limit: int = Query(10),
-    db: Session = Depends(get_postgresql_db)
+    db: Session = Depends(get_postgresql_db),
 ):
     return get_notes_list(db=db, is_deleted=True, skip=skip, limit=limit)
 
 
 @app.get("/notes/{note_id}/", response_model=schemas.NoteDetailResponseSchema)
-def get_active_note_by_id(note_id: int, db: Session = Depends(get_postgresql_db)):
+def get_active_note_by_id(
+    note_id: int, db: Session = Depends(get_postgresql_db)
+):
     note = get_note_by_id(db=db, note_id=note_id, is_deleted=False)
     if not note:
         raise HTTPException(404, detail="Note not found")
     return note
 
 
-@app.get("/notes/deleted/{note_id}/", response_model=schemas.NoteDetailResponseSchema)
-def get_deleted_note_by_id(note_id: int, db: Session = Depends(get_postgresql_db)):
+@app.get(
+    "/notes/deleted/{note_id}/",
+    response_model=schemas.NoteDetailResponseSchema,
+)
+def get_deleted_note_by_id(
+    note_id: int, db: Session = Depends(get_postgresql_db)
+):
     note = get_note_by_id(db=db, note_id=note_id, is_deleted=True)
     if not note:
         raise HTTPException(404, detail="Deleted note not found")
     return note
 
 
-@app.put("/notes/{note_id}", response_model=schemas.NoteDetailResponseSchema, status_code=201)
+@app.put(
+    "/notes/{note_id}",
+    response_model=schemas.NoteDetailResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+)
 def update_note(
     note_id: int,
     update_data: schemas.NoteUpdateRequestSchema,
-    db: Session = Depends(get_postgresql_db)
+    db: Session = Depends(get_postgresql_db),
 ):
-    return create_new_note_version(db=db, note_id=note_id, update_data=update_data)
+    return create_new_note_version(
+        db=db, note_id=note_id, update_data=update_data
+    )
 
 
-@app.post("/notes/deleted/restore/{note_id}/", response_model=schemas.MessageResponseSchema)
+@app.post(
+    "/notes/deleted/restore/{note_id}/",
+    response_model=schemas.MessageResponseSchema,
+)
 def restore_note(note_id: int, db: Session = Depends(get_postgresql_db)):
     note = restore_deleted_note(db=db, note_id=note_id)
     return schemas.MessageResponseSchema(
@@ -82,24 +105,35 @@ def delete_note(note_id: int, db: Session = Depends(get_postgresql_db)):
     )
 
 
-@app.get("/notes/history/all/{note_id}/", response_model=list[schemas.NoteResponseSchema])
+@app.get(
+    "/notes/history/all/{note_id}/",
+    response_model=list[schemas.NoteResponseSchema],
+)
 def get_note_history(note_id: int, db: Session = Depends(get_postgresql_db)):
     return get_all_note_versions(
-        db=db,
-        note=get_note_by_id(db=db, note_id=note_id, is_deleted=False)
+        db=db, note=get_note_by_id(db=db, note_id=note_id, is_deleted=False)
     )
 
 
-@app.get("/notes/history/previous/{note_id}/", response_model=schemas.NoteDetailResponseSchema)
-def get_previous_version(note_id: int, db: Session = Depends(get_postgresql_db)):
+@app.get(
+    "/notes/history/previous/{note_id}/",
+    response_model=schemas.NoteDetailResponseSchema,
+)
+def get_previous_version(
+    note_id: int, db: Session = Depends(get_postgresql_db)
+):
     return get_previous_note_version(
-        db=db,
-        note=get_note_by_id(db=db, note_id=note_id, is_deleted=False)
+        db=db, note=get_note_by_id(db=db, note_id=note_id, is_deleted=False)
     )
 
 
-@app.post("/notes/history/restore/{note_id}/", response_model=schemas.MessageResponseSchema)
-def restore_previous_version(note_id: int, db: Session = Depends(get_postgresql_db)):
+@app.post(
+    "/notes/history/restore/{note_id}/",
+    response_model=schemas.MessageResponseSchema,
+)
+def restore_previous_version(
+    note_id: int, db: Session = Depends(get_postgresql_db)
+):
     restore_previous_note_version(db=db, note_id=note_id)
 
     return schemas.MessageResponseSchema(

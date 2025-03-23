@@ -8,7 +8,7 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     func,
-    UniqueConstraint
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,8 +19,9 @@ class Note(Base):
     __tablename__ = "notes"
     __table_args__ = (
         UniqueConstraint(
-            "previous_version_id", "is_current",
-            name="only_one_current_version"
+            "previous_version_id",
+            "is_current",
+            name="only_one_current_version",
         ),
     )
 

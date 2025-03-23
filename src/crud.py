@@ -14,7 +14,8 @@ def create_note(db: Session, note_data: schemas.NoteCreateRequestSchema):
 
     Args:
         db (Session): SQLAlchemy database session.
-        note_data (schemas.NoteCreateRequestSchema): Data required to create a new note.
+        note_data (schemas.NoteCreateRequestSchema):
+            Data required to create a new note.
 
     Returns:
         Note: The newly created note object.
@@ -34,26 +35,31 @@ def create_note(db: Session, note_data: schemas.NoteCreateRequestSchema):
         raise HTTPException(500, detail=str(e))
 
 
-def get_notes_list(db: Session, is_deleted: bool, skip: int = 0, limit: int = 10):
+def get_notes_list(
+    db: Session, is_deleted: bool, skip: int = 0, limit: int = 10
+):
     """
     Retrieve a list of notes from the database.
 
     Args:
         db (Session): SQLAlchemy database session.
         is_deleted (bool): Filter for deleted or active notes.
-        skip (int, optional): Number of records to skip for pagination. Defaults to 0.
-        limit (int, optional): Maximum number of records to return. Defaults to 10.
+        skip (int, optional): Number of records to skip
+                              for pagination. Defaults to 0.
+        limit (int, optional): Maximum number of records
+                               to return. Defaults to 10.
 
     Returns:
         list[Note]: List of notes matching the filter criteria.
     """
-    # return db.query(Note).filter(
-    #     Note.is_current, Note.is_deleted == is_deleted
-    # ).offset(skip).limit(limit).all()
-    return db.execute(
-        select(Note).where(and_(Note.is_current, Note.is_deleted == is_deleted))
-        .offset(skip).limit(limit)
-    ).scalars().all()
+    return (
+        db.execute(select(Note).where(
+            and_(
+                Note.is_current,
+                Note.is_deleted == is_deleted),
+            ).offset(skip).limit(limit)
+        ).scalars().all()
+    )
 
 
 def get_note_by_id(db: Session, note_id: int, is_deleted: bool):
@@ -69,15 +75,19 @@ def get_note_by_id(db: Session, note_id: int, is_deleted: bool):
     Returns:
         Note: The note object if found, otherwise None.
     """
-    # return db.query(Note).filter(
-    #     Note.id == note_id, Note.is_current, Note.is_deleted == is_deleted
-    # ).first()
-    return db.execute(
-        select(Note).where(and_(Note.id == note_id, Note.is_current, Note.is_deleted == is_deleted))
-    ).scalars().first()
+    return db.execute(select(Note).where(
+                and_(
+                    Note.id == note_id,
+                    Note.is_current,
+                    Note.is_deleted == is_deleted,
+                )
+            )
+        ).scalars().first()
 
 
-def create_new_note_version(db: Session, note_id: int, update_data: schemas.NoteUpdateRequestSchema):
+def create_new_note_version(
+    db: Session, note_id: int, update_data: schemas.NoteUpdateRequestSchema
+):
     """
     Create a new version of an existing note.
     Make the previous version inactive and
@@ -86,13 +96,15 @@ def create_new_note_version(db: Session, note_id: int, update_data: schemas.Note
     Args:
         db (Session): SQLAlchemy database session.
         note_id (int): ID of the note to update.
-        update_data (schemas.NoteUpdateRequestSchema): Data for the updated note.
+        update_data (schemas.NoteUpdateRequestSchema):
+            Data for the updated note.
 
     Returns:
         Note: The newly created note version.
 
     Raises:
-        HTTPException: If the note is not found or if there is a database error.
+        HTTPException: If the note is not found
+                       or if there is a database error.
     """
     try:
         old_note = get_note_by_id(db=db, note_id=note_id, is_deleted=False)
@@ -100,7 +112,8 @@ def create_new_note_version(db: Session, note_id: int, update_data: schemas.Note
         if not old_note:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Note with ID {note_id} not found or not the current version"
+                detail=f"Note with ID {note_id} not found"
+                       f"or not the current version",
             )
 
         old_note.is_current = False
@@ -110,7 +123,7 @@ def create_new_note_version(db: Session, note_id: int, update_data: schemas.Note
             content=update_data.content,
             version=old_note.version + 1,
             previous_version_id=old_note.id,
-            is_current=True
+            is_current=True,
         )
 
         db.add(updated_note)
@@ -135,7 +148,8 @@ def restore_deleted_note(db: Session, note_id: int):
         Note: The restored note object.
 
     Raises:
-        HTTPException: If the note is not found or if there is a database error.
+        HTTPException: If the note is not found
+                       or if there is a database error.
     """
     try:
         note = get_note_by_id(db=db, note_id=note_id, is_deleted=True)
@@ -165,7 +179,8 @@ def soft_delete_note(db: Session, note_id: int):
         Note: The soft-deleted note object.
 
     Raises:
-        HTTPException: If the note is not found or if there is a database error.
+        HTTPException: If the note is not found
+            or if there is a database error.
     """
     try:
         note = get_note_by_id(db=db, note_id=note_id, is_deleted=False)
@@ -199,10 +214,9 @@ def get_previous_note_version(db: Session, note: Note):
     """
     if not note.previous_version_id:
         raise HTTPException(404, detail="No previous version found")
-    return db.execute(
-        select(Note).where(Note.id == note.previous_version_id)
+    return db.execute(select(Note).where(
+        Note.id == note.previous_version_id)
     ).scalars().first()
-    # return db.query(Note).filter(Note.id == note.previous_version_id).first()  # sqlalchemy v1
 
 
 def get_all_note_versions(db: Session, note: Note):
@@ -214,7 +228,8 @@ def get_all_note_versions(db: Session, note: Note):
         note (Note): The current note object.
 
     Returns:
-        list[Note]: A list of all versions of the note, starting from the current version.
+        list[Note]: A list of all versions of the note,
+                    starting from the current version.
     """
     history = []
     current = note
@@ -246,7 +261,9 @@ def restore_previous_note_version(db: Session, note_id: int):
                        is not found, or if there is a database error.
     """
     try:
-        current_note = get_note_by_id(db=db, note_id=note_id, is_deleted=False)
+        current_note = get_note_by_id(
+            db=db, note_id=note_id, is_deleted=False
+        )
         previous_note = get_previous_note_version(db=db, note=current_note)
 
         current_note.is_current = False
