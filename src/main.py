@@ -14,6 +14,7 @@ from src.crud import (
     restore_previous_note_version,
 )
 from src.database import get_postgresql_db
+from src.services.ai import get_summary
 
 app = FastAPI()
 
@@ -139,3 +140,19 @@ def restore_previous_version(
     return schemas.MessageResponseSchema(
         message=f"Previous version of note with ID {note_id} has been restored"
     )
+
+
+@app.post(
+    "/notes/summary/{note_id}/",
+    response_model=schemas.NoteDetailResponseSchema,
+)
+def get_note_summary(note_id: int, db: Session = Depends(get_postgresql_db)):
+    note = get_note_by_id(db=db, note_id=note_id, is_deleted=False)
+    if not note:
+        raise HTTPException(404, detail="Note not found")
+
+    note.summary = get_summary(note.content)
+
+    db.commit()
+    db.refresh(note)
+    return note
