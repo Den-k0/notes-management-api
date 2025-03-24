@@ -15,6 +15,7 @@ from src.crud import (
 )
 from src.database import get_postgresql_db
 from src.services.ai import get_summary
+from src.services.analytics import analyze_note_content
 
 app = FastAPI()
 
@@ -156,3 +157,8 @@ def get_note_summary(note_id: int, db: Session = Depends(get_postgresql_db)):
     db.commit()
     db.refresh(note)
     return note
+
+
+@app.get("/analytics/notes/", response_model=schemas.NotesAnalyticsSchema)
+def get_notes_analytics(db: Session = Depends(get_postgresql_db)):
+    return analyze_note_content(db=db)

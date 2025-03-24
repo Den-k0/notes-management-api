@@ -34,3 +34,22 @@ class NoteUpdateRequestSchema(NoteBaseSchema):
 
 class MessageResponseSchema(BaseModel):
     message: str
+
+
+class CommonWordSchema(BaseModel):
+    word: str
+    count: int
+
+
+class NoteLengthSchema(BaseModel):
+    id: int
+    word_count: int
+
+
+class NotesAnalyticsSchema(BaseModel):
+    total_notes: int
+    total_words: int
+    average_length: float
+    top_longest_notes: list[NoteLengthSchema]
+    top_shortest_notes: list[NoteLengthSchema]
+    most_common_words: list[CommonWordSchema]
