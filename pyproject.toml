@@ -1,0 +1,50 @@
+[project]
+name = "notes-management-api"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Den_k0",email = "denys.kotovskiy@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi (>=0.115.11,<0.116.0)",
+    "uvicorn (>=0.34.0,<0.35.0)",
+    "sqlalchemy (>=2.0.39,<3.0.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "alembic (>=1.15.1,<2.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "google-genai (>=1.7.0,<2.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "numpy (>=2.2.4,<3.0.0)",
+    "ruff==0.11.2",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+line-length = 79
+exclude = [
+    "alembic/versions/*",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # PEP8 naming convetions
+]
+
+ignore = ["I001", "E731"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
