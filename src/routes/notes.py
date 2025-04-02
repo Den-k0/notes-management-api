@@ -21,7 +21,7 @@ router = APIRouter()
 @router.post(
     "/",
     response_model=schemas.NoteDetailResponseSchema,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 def create_new_note(
     request: schemas.NoteCreateRequestSchema,
